@@ -1,0 +1,10 @@
+.superpowers/
+
+# Swift / SPM
+.build/
+.swiftpm/
+*.xcodeproj
+*.xcworkspace
+DerivedData/
+*.o
+*.d
