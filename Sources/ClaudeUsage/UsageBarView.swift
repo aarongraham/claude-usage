@@ -9,7 +9,7 @@ struct UsageBarView: View {
     private var barColor: Color {
         isPeak
             ? Color(red: 0.83, green: 0.65, blue: 0.46)
-            : Color(red: 0.49, green: 0.72, blue: 0.85)
+            : Color(red: 0.20, green: 0.45, blue: 0.65)
     }
 
     private var resetText: String {

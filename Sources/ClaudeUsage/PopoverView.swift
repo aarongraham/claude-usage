@@ -12,7 +12,7 @@ struct PopoverView: View {
     }
 
     private let peakColor = Color(red: 0.83, green: 0.65, blue: 0.46)
-    private let offPeakColor = Color(red: 0.49, green: 0.72, blue: 0.85)
+    private let offPeakColor = Color(red: 0.20, green: 0.45, blue: 0.65)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
