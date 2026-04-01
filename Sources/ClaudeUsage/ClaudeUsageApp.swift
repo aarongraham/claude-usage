@@ -27,11 +27,6 @@ struct ClaudeUsageApp: App {
     var body: some Scene {
         MenuBarExtra {
             PopoverView(usageService: usageService)
-                .onAppear {
-                    if usageService.usageData == nil && !usageService.isLoading {
-                        usageService.startPolling()
-                    }
-                }
         } label: {
             Text(menuBarText)
                 .foregroundStyle(isPeak
@@ -43,6 +38,5 @@ struct ClaudeUsageApp: App {
         }
         .menuBarExtraStyle(.window)
         .defaultSize(width: 320, height: 300)
-        .onChange(of: menuBarText) { _, _ in }
     }
 }

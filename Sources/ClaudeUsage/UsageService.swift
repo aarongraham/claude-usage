@@ -13,6 +13,7 @@ class UsageService {
     private static let apiURL = URL(string: "https://api.anthropic.com/api/oauth/usage")!
 
     func startPolling() {
+        guard timer == nil else { return }
         fetch()
         timer = Timer.scheduledTimer(withTimeInterval: Self.refreshInterval, repeats: true) { [weak self] _ in
             self?.fetch()
