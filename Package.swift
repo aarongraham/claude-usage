@@ -18,20 +18,7 @@ let package = Package(
         .testTarget(
             name: "ClaudeUsageCoreTests",
             dependencies: ["ClaudeUsageCore"],
-            path: "Tests/ClaudeUsageCoreTests",
-            swiftSettings: [
-                .unsafeFlags([
-                    "-F", "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
-                ])
-            ],
-            linkerSettings: [
-                .unsafeFlags([
-                    "-F", "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
-                    "-framework", "Testing",
-                    "-Xlinker", "-rpath",
-                    "-Xlinker", "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
-                ])
-            ]
+            path: "Tests/ClaudeUsageCoreTests"
         ),
     ]
 )
