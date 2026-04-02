@@ -93,7 +93,7 @@ struct PopoverView: View {
                 Spacer()
                 Text(peakTransitionText)
                     .font(.system(size: 11))
-                    .foregroundStyle(peakStatus.isPeak ? peakColor : offPeakColor)
+                    .foregroundStyle(.secondary)
             }
             Text("Weekdays 5am\u{2013}11am PT")
                 .font(.system(size: 10))
