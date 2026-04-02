@@ -7,9 +7,7 @@ struct UsageBarView: View {
     let isPeak: Bool
 
     private var barColor: Color {
-        isPeak
-            ? Color(red: 0.83, green: 0.65, blue: 0.46)
-            : Color(red: 0.20, green: 0.45, blue: 0.65)
+        .primary.opacity(0.5)
     }
 
     private var resetText: String {
