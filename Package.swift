@@ -13,7 +13,8 @@ let package = Package(
         .executableTarget(
             name: "ClaudeUsage",
             dependencies: ["ClaudeUsageCore"],
-            path: "Sources/ClaudeUsage"
+            path: "Sources/ClaudeUsage",
+            exclude: ["Info.plist"]
         ),
         .testTarget(
             name: "ClaudeUsageCoreTests",
