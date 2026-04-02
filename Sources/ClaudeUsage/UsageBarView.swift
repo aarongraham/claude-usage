@@ -7,7 +7,7 @@ struct UsageBarView: View {
     let isPeak: Bool
 
     private var barColor: Color {
-        .white
+        Color.accentColor
     }
 
     private var resetText: String {
