@@ -11,10 +11,17 @@ public enum KeychainHelper {
         let accessToken: String
     }
 
+    nonisolated(unsafe) private static var cachedToken: String?
+
     public static func getToken() -> String? {
-        // Read from credentials file directly to avoid repeated keychain password prompts.
-        // The keychain item is owned by Claude Code, so macOS prompts on every access.
-        return readFromCredentialsFile()
+        if let cached = cachedToken {
+            return cached
+        }
+        // Prefer credentials file (no password prompt).
+        // Fall back to keychain (prompts once, then cached for session).
+        let token = readFromCredentialsFile() ?? readFromKeychain()
+        cachedToken = token
+        return token
     }
 
     static func readFromKeychain() -> String? {
