@@ -27,6 +27,16 @@ struct PopoverView: View {
                 ProgressView()
                     .frame(maxWidth: .infinity)
             }
+            Divider().opacity(0.3)
+            HStack {
+                Spacer()
+                Button("Quit") {
+                    NSApplication.shared.terminate(nil)
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+            }
         }
         .padding(20)
         .frame(width: 320)
