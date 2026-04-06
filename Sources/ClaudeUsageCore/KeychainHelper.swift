@@ -12,9 +12,8 @@ public enum KeychainHelper {
     }
 
     public static func getToken() -> String? {
-        if let token = readFromKeychain() {
-            return token
-        }
+        // Read from credentials file directly to avoid repeated keychain password prompts.
+        // The keychain item is owned by Claude Code, so macOS prompts on every access.
         return readFromCredentialsFile()
     }
 
