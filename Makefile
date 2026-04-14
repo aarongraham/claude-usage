@@ -1,5 +1,5 @@
 APP_NAME = ClaudeUsage
-VERSION = 1.0.0
+VERSION = 1.1.1
 BUNDLE = $(APP_NAME).app
 BUILD_DIR = .build/release
 
