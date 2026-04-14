@@ -20,9 +20,22 @@ struct PopoverView: View {
             if let data = usageService.usageData {
                 usageContent(data: data)
             } else if let error = usageService.lastError {
-                Text(error)
-                    .font(.system(size: 12))
-                    .foregroundStyle(.red)
+                VStack(spacing: 8) {
+                    Text(error)
+                        .font(.system(size: 12))
+                        .foregroundStyle(.red)
+                    if error == "No OAuth token found" {
+                        Text("Log in to Claude Code CLI first:\nclaude login")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+                    Button("Retry") {
+                        Task { await usageService.retryNow() }
+                    }
+                    .font(.system(size: 11))
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.accentColor)
+                }
             } else {
                 ProgressView()
                     .frame(maxWidth: .infinity)
@@ -136,7 +149,7 @@ struct PopoverView: View {
                     .foregroundStyle(.secondary)
                 Spacer()
                 if let used = data.extraUsageUsed, let limit = data.extraUsageLimit {
-                    Text("$\(String(format: "%.2f", Double(used) / 100)) / $\(String(format: "%.2f", Double(limit) / 100))")
+                    Text("$\(String(format: "%.2f", used / 100)) / $\(String(format: "%.2f", limit / 100))")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary.opacity(0.7))
                 }

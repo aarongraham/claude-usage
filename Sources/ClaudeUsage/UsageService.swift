@@ -28,6 +28,12 @@ class UsageService {
         pollingTask = nil
     }
 
+    func retryNow() async {
+        retryAfter = nil
+        KeychainHelper.clearCachedToken()
+        await fetch()
+    }
+
     func fetch() async {
         if let retryAfter, Date() < retryAfter {
             return
@@ -71,6 +77,12 @@ class UsageService {
                 .flatMap { Double($0) } ?? 300
             retryAfter = Date().addingTimeInterval(retrySeconds)
             lastError = "Rate limited"
+            return
+        }
+
+        if httpResponse.statusCode == 401 {
+            KeychainHelper.clearCachedToken()
+            lastError = "Token expired — click Retry"
             return
         }
 

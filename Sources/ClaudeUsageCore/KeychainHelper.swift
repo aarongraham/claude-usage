@@ -13,6 +13,10 @@ public enum KeychainHelper {
 
     nonisolated(unsafe) private static var cachedToken: String?
 
+    public static func clearCachedToken() {
+        cachedToken = nil
+    }
+
     public static func getToken() -> String? {
         if let cached = cachedToken {
             return cached
