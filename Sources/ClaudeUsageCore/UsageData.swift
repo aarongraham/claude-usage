@@ -34,8 +34,8 @@ public struct SevenDayUsage: Codable {
 
 public struct ExtraUsage: Codable {
     public let isEnabled: Bool
-    public let monthlyLimit: Int?
-    public let usedCredits: Int?
+    public let monthlyLimit: Double?
+    public let usedCredits: Double?
     public let utilization: Double?
 
     enum CodingKeys: String, CodingKey {
@@ -53,8 +53,8 @@ public struct UsageData {
     public let weeklyResetAt: Date
     public let extraUsageEnabled: Bool
     public let extraUsageUtilization: Double?
-    public let extraUsageUsed: Int?
-    public let extraUsageLimit: Int?
+    public let extraUsageUsed: Double?
+    public let extraUsageLimit: Double?
 
     public static func from(response: UsageResponse) -> UsageData? {
         guard let fiveHour = response.fiveHour,

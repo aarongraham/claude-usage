@@ -68,6 +68,25 @@ struct UsageDataTests {
         #expect(components.hour == 12)
     }
 
+    @Test func decodesFractionalUsedCredits() throws {
+        let json = """
+        {
+            "five_hour": { "utilization": 10.0, "resets_at": "2030-01-01T12:00:00.000Z" },
+            "seven_day": { "utilization": 5.0, "resets_at": "2030-01-07T00:00:00.000Z" },
+            "extra_usage": {
+                "is_enabled": true,
+                "monthly_limit": 2000,
+                "used_credits": 3.50,
+                "utilization": null
+            }
+        }
+        """.data(using: .utf8)!
+        let response = try JSONDecoder().decode(UsageResponse.self, from: json)
+        let data = try #require(UsageData.from(response: response))
+        #expect(data.extraUsageUsed == 3.50)
+        #expect(data.extraUsageLimit == 2000)
+    }
+
     @Test func returnsNilForMissingFiveHour() throws {
         let json = """
         { "seven_day": { "utilization": 5.0, "resets_at": "2030-01-07T00:00:00.000Z" } }
