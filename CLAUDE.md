@@ -52,6 +52,20 @@ The response includes fields the model ignores (e.g. `seven_day_oauth_apps`, `se
 
 The Retry button calls `UsageService.retryNow()`, which clears `retryAfter`, clears the cached token, and forces `fetch()`. Without this users were stuck for 5 minutes after a transient 429.
 
+## Code signing (one-time setup)
+
+The Makefile signs the bundle with a stable self-signed identity instead of ad-hoc. The reason: macOS keychain "Always Allow" grants are tied to the app's code signature. Ad-hoc signing produces a different signature on every build, invalidating the grant and re-triggering the "ClaudeUsage wants to access 'Claude Code-credentials' in your keychain" prompt after every `make install`. A stable identity makes the grant stick across rebuilds.
+
+Setup steps (do once per machine):
+
+1. Open **Keychain Access** → menu bar → **Keychain Access** → **Certificate Assistant** → **Create a Certificate…**
+2. Name: `ClaudeUsage Self-Signed` · Identity Type: **Self Signed Root** · Certificate Type: **Code Signing**
+3. Click Create, then Continue through the warnings.
+
+No Apple Developer subscription required — the cert lives only in your login keychain and is only used for local builds. First `make install` after setup will still prompt once for keychain access; click **Always Allow** and it will stick for all subsequent rebuilds.
+
+If the cert isn't present, builds will fail with `errSecCSNoIdentity`. Override on the fly with `make bundle CODESIGN_IDENTITY=-` (ad-hoc, for emergencies).
+
 ## Manual testing
 
 After making changes, run these before shipping:

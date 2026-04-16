@@ -4,11 +4,21 @@ import ClaudeUsageCore
 struct PopoverView: View {
     let usageService: UsageService
     @State private var now = Date()
+    @State private var isManualRefreshing = false
+    @State private var showCompleted = false
+    @State private var completedTask: Task<Void, Never>?
 
     private let minuteTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
     private var peakStatus: PeakStatus {
         PeakTimeHelper.status(at: now)
+    }
+
+    private var isRateLimited: Bool {
+        if let until = usageService.retryAfter {
+            return now < until
+        }
+        return false
     }
 
     private let peakColor = Color(red: 0.83, green: 0.65, blue: 0.46)
@@ -57,11 +67,55 @@ struct PopoverView: View {
     }
 
     private var header: some View {
-        HStack {
+        HStack(spacing: 8) {
             Text("Claude Usage")
                 .font(.system(size: 14, weight: .semibold))
-            Spacer()
             peakBadge
+            Spacer()
+            refreshButton
+        }
+    }
+
+    private var refreshButton: some View {
+        Button(action: startManualRefresh) {
+            ZStack {
+                if showCompleted {
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(.green)
+                } else if isManualRefreshing {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Image(systemName: "arrow.clockwise")
+                        .foregroundStyle(.secondary)
+                        .opacity(isRateLimited ? 0.4 : 1.0)
+                }
+            }
+            .font(.system(size: 13, weight: .medium))
+            .frame(width: 16, height: 16)
+        }
+        .buttonStyle(.plain)
+        .disabled(isManualRefreshing || isRateLimited || showCompleted)
+        .help(isRateLimited ? "Rate limited — try again in a few minutes" : "Refresh now")
+    }
+
+    private func startManualRefresh() {
+        completedTask?.cancel()
+        showCompleted = false
+        isManualRefreshing = true
+        Task {
+            await usageService.fetch()
+            isManualRefreshing = false
+            guard usageService.lastError == nil, usageService.usageData != nil else {
+                return
+            }
+            showCompleted = true
+            completedTask = Task {
+                try? await Task.sleep(for: .milliseconds(1200))
+                if !Task.isCancelled {
+                    showCompleted = false
+                }
+            }
         }
     }
 
