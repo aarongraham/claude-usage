@@ -1,5 +1,4 @@
 import Foundation
-@preconcurrency import Security
 
 public enum KeychainHelper {
 
@@ -21,41 +20,39 @@ public enum KeychainHelper {
         if let cached = cachedToken {
             return cached
         }
-        // Prefer credentials file (no password prompt).
-        // Fall back to keychain (prompts once, then cached for session).
-        let token = readFromCredentialsFile() ?? readFromKeychain()
+        let token = readViaSecurityCLI()
         cachedToken = token
         return token
     }
 
-    static func readFromKeychain() -> String? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: "Claude Code-credentials",
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
+    // Reading via /usr/bin/security (rather than calling SecItemCopyMatching
+    // from this process) avoids a recurring password prompt. Claude Code
+    // rotates the OAuth token every ~4h and its SecItemUpdate scrubs non-Apple
+    // entries from the keychain item's partition_id list — including this
+    // app's cdhash — so the next direct read reprompts. /usr/bin/security is
+    // in the apple-tool: partition, which is never scrubbed, so it can read
+    // silently across rotations.
+    static func readViaSecurityCLI() -> String? {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/security")
+        task.arguments = ["find-generic-password", "-s", "Claude Code-credentials", "-w"]
 
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        let stdout = Pipe()
+        task.standardOutput = stdout
+        task.standardError = Pipe()
 
-        guard status == errSecSuccess,
-              let data = result as? Data else {
+        do {
+            try task.run()
+            task.waitUntilExit()
+        } catch {
             return nil
         }
 
-        return extractToken(from: data)
-    }
-
-    static func readFromCredentialsFile() -> String? {
-        let configDir = ProcessInfo.processInfo.environment["CLAUDE_CONFIG_DIR"]
-            ?? NSHomeDirectory() + "/.claude"
-        let path = configDir + "/.credentials.json"
-
-        guard let data = FileManager.default.contents(atPath: path) else {
+        guard task.terminationStatus == 0 else {
             return nil
         }
 
+        let data = stdout.fileHandleForReading.readDataToEndOfFile()
         return extractToken(from: data)
     }
 

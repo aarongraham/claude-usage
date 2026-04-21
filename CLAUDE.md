@@ -7,7 +7,7 @@ A SwiftUI macOS menu bar app that polls the Anthropic usage API and shows subscr
 Swift Package with two targets:
 
 - `ClaudeUsageCore` — pure library, no UI. Contains:
-  - `KeychainHelper.swift` — reads OAuth token from `~/.claude/.credentials.json` first, then falls back to macOS Keychain (`Claude Code-credentials` service). Caches in memory for the session; call `clearCachedToken()` to force re-read.
+  - `KeychainHelper.swift` — reads OAuth token by shelling out to `/usr/bin/security find-generic-password -s "Claude Code-credentials" -w` and parsing the JSON blob. Caches in memory for the session; call `clearCachedToken()` to force re-read. See the auth section below for why we go through the `security` CLI instead of calling `SecItemCopyMatching` directly.
   - `UsageData.swift` — Codable models for the API response, plus `UsageData.from(response:)` which normalizes/clamps values and parses ISO8601 reset dates.
   - `PeakTimeHelper.swift` — peak-hour math (weekdays 5am–11am PT).
 - `ClaudeUsage` — the executable target (menu bar app).
@@ -20,10 +20,14 @@ Tests live under `Tests/ClaudeUsageCoreTests/` and use the Swift Testing framewo
 
 ## Auth & API — the tricky bits
 
-The app does NOT use an API key. It reuses the OAuth token that `claude` (the CLI) stores on the user's machine:
+The app does NOT use an API key. It reuses the OAuth token that `claude` (the CLI) stores in the macOS Keychain under service `Claude Code-credentials`. Claude CLI 2.1+ no longer writes `~/.claude/.credentials.json` — the keychain is the only source of truth.
 
-- **Credentials file** (preferred, no prompt): `~/.claude/.credentials.json` — JSON shaped like `{"claudeAiOauth": {"accessToken": "sk-ant-oat01-..."}}`. Path can be overridden via `CLAUDE_CONFIG_DIR`.
-- **Keychain fallback** (prompts once per launch): `security find-generic-password -s "Claude Code-credentials"`. Returns the same JSON blob as the credentials file.
+`KeychainHelper` gets the token by spawning `/usr/bin/security find-generic-password -s "Claude Code-credentials" -w` and parsing the JSON blob it prints (shape: `{"claudeAiOauth": {"accessToken": "sk-ant-oat01-..."}}`). We go through the `security` CLI — not `SecItemCopyMatching` from inside this app — on purpose:
+
+- Claude CLI rotates the OAuth token every ~4 hours (the `expiresAt` field is 4h past each `mdat` update).
+- Each rotation does a `SecItemUpdate` on the keychain item, which scrubs non-Apple entries from the item's `partition_id` list. That means this app's `cdhash` gets removed on every rotation, even if the user previously clicked "Always Allow".
+- Next time this app calls `SecItemCopyMatching` directly, the partition check fails and macOS prompts again. The ACL entry by cert leaf is *also* present and `OK`, but the partition check is a separate gate and self-signed certs don't satisfy it.
+- `/usr/bin/security` lives in the `apple-tool:` partition, which is always included by macOS and is never scrubbed. So shelling out to it reads the item silently across rotations — no prompt, no self-signed cert needed.
 
 The API endpoint:
 
@@ -43,7 +47,7 @@ The response includes fields the model ignores (e.g. `seven_day_oauth_apps`, `se
 
 | String | Meaning |
 |---|---|
-| `No OAuth token found` | No credentials file and no keychain entry. Popover shows `claude login` hint. |
+| `No OAuth token found` | `security find-generic-password` returned non-zero (no keychain entry). Popover shows `claude login` hint. |
 | `Token expired — click Retry` | 401. Cached token is cleared; user clicks Retry to re-read. |
 | `Rate limited` | 429. Backs off for `Retry-After` seconds (default 300). |
 | `HTTP NNN` | Any other non-200. |
@@ -52,19 +56,9 @@ The response includes fields the model ignores (e.g. `seven_day_oauth_apps`, `se
 
 The Retry button calls `UsageService.retryNow()`, which clears `retryAfter`, clears the cached token, and forces `fetch()`. Without this users were stuck for 5 minutes after a transient 429.
 
-## Code signing (one-time setup)
+## Code signing
 
-The Makefile signs the bundle with a stable self-signed identity instead of ad-hoc. The reason: macOS keychain "Always Allow" grants are tied to the app's code signature. Ad-hoc signing produces a different signature on every build, invalidating the grant and re-triggering the "ClaudeUsage wants to access 'Claude Code-credentials' in your keychain" prompt after every `make install`. A stable identity makes the grant stick across rebuilds.
-
-Setup steps (do once per machine):
-
-1. Open **Keychain Access** → menu bar → **Keychain Access** → **Certificate Assistant** → **Create a Certificate…**
-2. Name: `ClaudeUsage Self-Signed` · Identity Type: **Self Signed Root** · Certificate Type: **Code Signing**
-3. Click Create, then Continue through the warnings.
-
-No Apple Developer subscription required — the cert lives only in your login keychain and is only used for local builds. First `make install` after setup will still prompt once for keychain access; click **Always Allow** and it will stick for all subsequent rebuilds.
-
-If the cert isn't present, builds will fail with `errSecCSNoIdentity`. Override on the fly with `make bundle CODESIGN_IDENTITY=-` (ad-hoc, for emergencies).
+The Makefile ad-hoc signs the bundle (`codesign --sign -`). No developer cert is needed — the "Always Allow" keychain grant that we previously tried to pin with a self-signed identity is no longer part of the token-read path (see the auth section), so there's nothing to keep stable across rebuilds.
 
 ## Manual testing
 

@@ -41,32 +41,9 @@ make install
 
 Requires Xcode or Xcode Command Line Tools with Swift 6.0+.
 
-#### One-time: create a self-signed code signing cert
-
-The Makefile signs the bundle with a stable identity called `ClaudeUsage Self-Signed`. Without it, `make install` fails with `errSecCSNoIdentity`, and even if you override with ad-hoc signing, macOS will re-prompt you with "ClaudeUsage wants to access 'Claude Code-credentials' in your keychain" after every rebuild (because ad-hoc signatures change on each build, invalidating the Keychain's "Always Allow" grant).
-
-Create the cert once per machine:
-
-1. Open **Keychain Access** (⌘+Space → "Keychain Access")
-2. Menu bar → **Keychain Access** → **Certificate Assistant** → **Create a Certificate…**
-3. Fill in:
-   - **Name:** `ClaudeUsage Self-Signed`
-   - **Identity Type:** Self Signed Root
-   - **Certificate Type:** Code Signing
-4. Click **Create** and accept the warning
-5. Run `make install`. On first launch, macOS will ask once to access the Keychain — click **Always Allow**. It should stick from then on across rebuilds.
-
-No paid Apple Developer account required — the cert lives only in your login Keychain.
-
-If you'd rather skip the cert, override with ad-hoc signing (you'll see the Keychain prompt on every rebuild):
-
-```bash
-make install CODESIGN_IDENTITY=-
-```
-
 ## How it works
 
-The app reads your Claude Code OAuth token from the macOS Keychain (`Claude Code-credentials` service) and calls `GET https://api.anthropic.com/api/oauth/usage` to get your current usage data. No API keys are stored in the app - it piggybacks on your existing Claude Code authentication.
+The app reads your Claude Code OAuth token by shelling out to `/usr/bin/security find-generic-password -s "Claude Code-credentials" -w`, then calls `GET https://api.anthropic.com/api/oauth/usage` for your current usage. No API keys are stored in the app — it piggybacks on your existing Claude Code authentication. Going through `/usr/bin/security` (instead of reading the keychain directly from this app) avoids the recurring "ClaudeUsage wants to access your keychain" prompt that otherwise appears every time Claude Code rotates its OAuth token.
 
 ## License
 
