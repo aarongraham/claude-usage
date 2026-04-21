@@ -27,7 +27,7 @@ A macOS menu bar app that shows your Anthropic (Claude) subscription usage at a 
 
 ### From release
 
-1. Download `ClaudeUsage-1.1.2.zip` from [Releases](https://github.com/aarongraham/claude-usage/releases)
+1. Download `ClaudeUsage-1.1.3.zip` from [Releases](https://github.com/aarongraham/claude-usage/releases)
 2. Unzip and drag `ClaudeUsage.app` to `/Applications`
 3. Open it. If macOS blocks it, go to System Settings > Privacy & Security and click "Open Anyway"
 
