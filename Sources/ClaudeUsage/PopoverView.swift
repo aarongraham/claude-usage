@@ -9,6 +9,7 @@ struct PopoverView: View {
     @State private var completedTask: Task<Void, Never>?
 
     private let minuteTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
+    private let secondTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     private var peakStatus: PeakStatus {
         PeakTimeHelper.status(at: now)
@@ -39,12 +40,18 @@ struct PopoverView: View {
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)
                     }
-                    Button("Retry") {
-                        Task { await usageService.retryNow() }
+                    if isRateLimited, let until = usageService.retryAfter {
+                        Text("Retry available in \(rateLimitCountdown(until: until))")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Button("Retry") {
+                            Task { await usageService.retryNow() }
+                        }
+                        .font(.system(size: 11))
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Color.accentColor)
                     }
-                    .font(.system(size: 11))
-                    .buttonStyle(.plain)
-                    .foregroundStyle(Color.accentColor)
                 }
             } else {
                 ProgressView()
@@ -64,6 +71,7 @@ struct PopoverView: View {
         .padding(20)
         .frame(width: 320)
         .onReceive(minuteTimer) { _ in now = Date() }
+        .onReceive(secondTimer) { date in if isRateLimited { now = date } }
     }
 
     private var header: some View {
@@ -192,6 +200,11 @@ struct PopoverView: View {
             return "\(prefix) \(days)d \(remHours)h"
         }
         return "\(prefix) \(hours)h \(minutes)m"
+    }
+
+    private func rateLimitCountdown(until: Date) -> String {
+        let remaining = max(0, Int(until.timeIntervalSince(now)))
+        return String(format: "%d:%02d", remaining / 60, remaining % 60)
     }
 
     private func extraUsageSection(data: UsageData) -> some View {
