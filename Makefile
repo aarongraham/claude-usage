@@ -13,6 +13,7 @@ bundle: build
 	mkdir -p $(BUNDLE)/Contents/MacOS
 	mkdir -p $(BUNDLE)/Contents/Resources
 	cp Sources/ClaudeUsage/Info.plist $(BUNDLE)/Contents/
+	cp Resources/AppIcon.icns $(BUNDLE)/Contents/Resources/
 	cp $(BUILD_DIR)/$(APP_NAME) $(BUNDLE)/Contents/MacOS/
 	codesign --force --sign - $(BUNDLE)
 	@echo "Built $(BUNDLE) v$(VERSION)"

@@ -14,3 +14,6 @@ DerivedData/
 *.app
 *.zip
 *.dmg
+
+# Icon generator intermediate (the .icns is checked in; the iconset is regenerated)
+Tools/AppIcon.iconset/

@@ -59,6 +59,9 @@ struct PopoverView: View {
             }
             Divider().opacity(0.3)
             HStack {
+                Text("v\(appVersion)")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary.opacity(0.6))
                 Spacer()
                 Button("Quit") {
                     NSApplication.shared.terminate(nil)
@@ -200,6 +203,10 @@ struct PopoverView: View {
             return "\(prefix) \(days)d \(remHours)h"
         }
         return "\(prefix) \(hours)h \(minutes)m"
+    }
+
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
     }
 
     private func rateLimitCountdown(until: Date) -> String {
