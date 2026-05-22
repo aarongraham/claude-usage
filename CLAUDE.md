@@ -12,7 +12,7 @@ Swift Package with two targets:
   - `PeakTimeHelper.swift` — peak-hour math (weekdays 5am–11am PT).
 - `ClaudeUsage` — the executable target (menu bar app).
   - `ClaudeUsageApp.swift` — `MenuBarExtra` entry point, shows `⬡ NN%` or `⬡ --`.
-  - `UsageService.swift` — `@MainActor @Observable`, polls every 180s, handles retry/backoff/401/429.
+  - `UsageService.swift` — `@MainActor @Observable`, polls every 600s (10 min), handles retry/backoff/401/429.
   - `PopoverView.swift` — the dropdown UI (usage bars, peak badge, extra-usage line, Retry button on error).
   - `UsageBarView.swift` — progress bar with reset countdown.
 
@@ -128,7 +128,7 @@ After publishing, update the download link version in `README.md` if the user-fa
 ## Common pitfalls
 
 - **Don't** add `@testable import` for types that need to stay `public` — the core library exposes its API via `public` on purpose so the app target can use it.
-- **Don't** change the polling interval much below 180s without adding smarter backoff — the API will 429.
+- **Don't** drop the polling interval below ~600s (10 min) without adding smarter backoff. The `/api/oauth/usage` endpoint has a per-OAuth-token bucket of ~3 requests per 5-minute window with `Retry-After: ~290s`. At 180s we previously tripped 429s constantly once anything else (claude CLI, claude.ai tab) shared the token; 600s gives comfortable headroom.
 - **Don't** remove the `anthropic-beta` header; the API rejects OAuth without it.
 - **Don't** amend shipped commits; history past `v1.0.0` is public.
 - The running menu bar app holds an exclusive lock on the bundle — `make install` will appear to succeed but run the old binary if you forget to quit the app first.

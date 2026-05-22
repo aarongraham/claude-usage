@@ -8,7 +8,7 @@ class UsageService {
     var isLoading = false
 
     private(set) var retryAfter: Date?
-    private static let refreshInterval: TimeInterval = 180
+    private static let refreshInterval: TimeInterval = 600
     private static let apiURL = URL(string: "https://api.anthropic.com/api/oauth/usage")!
 
     private var pollingTask: Task<Void, Never>?
