@@ -41,17 +41,16 @@ struct PopoverView: View {
                             .foregroundStyle(.secondary)
                     }
                     if isRateLimited, let until = usageService.retryAfter {
-                        Text("Retry available in \(rateLimitCountdown(until: until))")
+                        Text("Auto-retry in \(rateLimitCountdown(until: until))")
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)
-                    } else {
-                        Button("Retry") {
-                            Task { await usageService.retryNow() }
-                        }
-                        .font(.system(size: 11))
-                        .buttonStyle(.plain)
-                        .foregroundStyle(Color.accentColor)
                     }
+                    Button("Retry now") {
+                        Task { await usageService.retryNow() }
+                    }
+                    .font(.system(size: 11))
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.accentColor)
                 }
             } else {
                 ProgressView()

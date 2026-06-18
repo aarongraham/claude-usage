@@ -73,8 +73,9 @@ class UsageService {
         }
 
         if httpResponse.statusCode == 429 {
-            let retrySeconds = httpResponse.value(forHTTPHeaderField: "Retry-After")
-                .flatMap { Double($0) } ?? 300
+            let retrySeconds = RateLimit.retrySeconds(
+                fromHeader: httpResponse.value(forHTTPHeaderField: "Retry-After")
+            )
             retryAfter = Date().addingTimeInterval(retrySeconds)
             lastError = "Rate limited"
             return
